@@ -8,4 +8,5 @@ export interface Model {
     name: string;
     type: ModelType;
     createdAt: Date;
+    data: FormData;
 }
