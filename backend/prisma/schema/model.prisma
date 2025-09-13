@@ -1,0 +1,12 @@
+enum ModelType {
+  CLASSIFICATION
+  ANOMALY_DETECTION
+}
+
+model Model {
+  id     String    @id @default(uuid())
+  name   String
+  type   ModelType
+  createdAt DateTime @default(now())
+  data     Bytes
+}

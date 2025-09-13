@@ -1,7 +1,4 @@
-enum ModelType {
-    CLASSIFICATION = "classification",
-    ANOMALY_DETECTION = "anomaly_detection"
-}
+import { ModelType } from "../enums/model";
 
 export interface Model {
     id: string;
