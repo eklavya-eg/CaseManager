@@ -1,6 +1,6 @@
-import z, { minLength } from "zod"
+import z from "zod"
 
 export const modelPost = z.object({
-    name: z.string().min(3),
-    type: z.enum(["classification", "anomaly_detection"]),
+    name: z.string().min(5).refine(v=>v.endsWith(".pkl")||v.endsWith(".cb"), {message:"Must ends with model extensions"}),
+    type: z.enum(["CLASSIFICATION", "ANOMALY_DETECTION"]),
 })
