@@ -40,13 +40,14 @@ const existingModels: ModelFile[] = [
 ];
 
 enum ModelType {
-  CLASSIFICATION = "classification",
-  ANOMALY_DETECTION = "anomaly_detection"
+  CLASSIFICATION = "CLASSIFICATION",
+  ANOMALY_DETECTION = "ANOMALY_DETECTION"
 }
 
 export default function ModelUpload() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [modelType, setType] = useState<ModelType>(ModelType.CLASSIFICATION);
+  const [modelName, setName] = useState<String>("");
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileSelect = (files: File[]) => {
@@ -61,7 +62,8 @@ export default function ModelUpload() {
     setIsUploading(true);
 
     // Simulate upload process
-    const response = await axios.post("/api/v1/model/", {
+    const response = await axios.post(`${process.env.BACKEND_URL}/api/v1/model/`, {
+      name: modelName,
       type: modelType,
       file: formData
     })
