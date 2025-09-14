@@ -45,7 +45,7 @@ export const postModel = async (req: Request, res: Response) => {
                 name: parsed.data.name,
                 // @ts-ignore
                 modelType: parsed.data.type,
-                file: file.buffer
+                data: file.buffer
             }
         })
         return res.status(201).json({message: "Success", model})
@@ -59,7 +59,7 @@ export const deleteModel = async (req: Request, res: Response) => {
     try {
         const {id} = req.params
         if(!id){return res.status(403).json({message:"Invalid Input"})}
-        const model = await prismaClient.model.findFirst(
+        const model = await prismaClient.model.delete(
             {
                 where: {id: id}
             }
