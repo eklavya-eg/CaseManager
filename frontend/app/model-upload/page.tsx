@@ -124,7 +124,7 @@ export default function ModelUpload() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Brain className="h-5 w-5 text-purple-600" />
-                <span>Upload New Model</span>
+                <span className='text-slate-900' >Upload New Model</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -208,7 +208,7 @@ export default function ModelUpload() {
       <Card className="border-0 shadow-sm bg-white">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Existing Models</span>
+            <span className='text-slate-900' >Existing Models</span>
             <Badge variant="outline" className="text-xs">
               {existingModels.length} models
             </Badge>

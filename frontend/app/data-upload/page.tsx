@@ -105,7 +105,7 @@ export default function DataUpload() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Database className="h-5 w-5 text-blue-600" />
-                <span>Upload New Dataset</span>
+                <span className='text-slate-900' >Upload New Dataset</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -227,7 +227,7 @@ export default function DataUpload() {
       <Card className="border-0 shadow-sm bg-white">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Existing Datasets</span>
+            <span className='text-slate-900' >Existing Datasets</span>
             <Badge variant="outline" className="text-xs">
               {existingDatasets.length} datasets
             </Badge>
