@@ -40,13 +40,14 @@ const existingModels: ModelFile[] = [
 ];
 
 enum ModelType {
-  CLASSIFICATION = "classification",
-  ANOMALY_DETECTION = "anomaly_detection"
+  CLASSIFICATION = "CLASSIFICATION",
+  ANOMALY_DETECTION = "ANOMALY_DETECTION"
 }
 
 export default function ModelUpload() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [modelType, setType] = useState<ModelType>(ModelType.CLASSIFICATION);
+  const [modelName, setName] = useState<String>("");
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileSelect = (files: File[]) => {
@@ -61,7 +62,8 @@ export default function ModelUpload() {
     setIsUploading(true);
 
     // Simulate upload process
-    const response = await axios.post("/api/v1/model/", {
+    const response = await axios.post(`${process.env.BACKEND_URL}/api/v1/model/`, {
+      name: modelName,
       type: modelType,
       file: formData
     })
@@ -122,7 +124,7 @@ export default function ModelUpload() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Brain className="h-5 w-5 text-purple-600" />
-                <span>Upload New Model</span>
+                <span className='text-slate-900' >Upload New Model</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -206,7 +208,7 @@ export default function ModelUpload() {
       <Card className="border-0 shadow-sm bg-white">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Existing Models</span>
+            <span className='text-slate-900' >Existing Models</span>
             <Badge variant="outline" className="text-xs">
               {existingModels.length} models
             </Badge>

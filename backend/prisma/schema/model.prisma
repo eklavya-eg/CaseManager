@@ -4,9 +4,9 @@ enum ModelType {
 }
 
 model Model {
-  id     String    @id @default(uuid())
-  name   String
-  type   ModelType
-  createdAt DateTime @default(now())
-  data     Bytes
+  id        String    @id @default(uuid())
+  name      String
+  type      ModelType
+  createdAt DateTime  @default(now())
+  data      Bytes
 }

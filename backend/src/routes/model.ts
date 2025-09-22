@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { deleteModel, getModel, getModels, postModel } from "../controllers/model";
+import { modelController } from "../controllers/model";
 import { upload } from "..";
 
-const router = Router();
+export const router = Router();
 
-router.get("/model", getModels)
-router.post("/model", upload.single("file"), postModel)
-router.get("/model/:id", getModel)
-router.delete("/model:id", deleteModel)
+router.get("/model", modelController.getModels)
+router.post("/model", upload.single("file"), modelController.postModel)
+router.get("/model/:id", modelController.getModel)
+router.delete("/model:id", modelController.deleteModel)

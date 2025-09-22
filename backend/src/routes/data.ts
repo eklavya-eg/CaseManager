@@ -1,5 +1,10 @@
 import { Router } from "express";
+import { dataController } from "../controllers/data";
+import { upload } from "..";
 
-const router = Router();
+export const router = Router();
 
-router.post("/data", )
+router.get("/data", dataController.getDatasets)
+router.post("/data", upload.single("file"), dataController.postDataset)
+router.get("/data/:id", dataController.getDataset)
+router.delete("/data:id", dataController.deleteDataset)
