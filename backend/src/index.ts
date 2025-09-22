@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import { prismaClient } from "./db/db";
+import { baseRouter } from "./routes/baseRouter";
 
 
 const app = express();
@@ -10,6 +11,7 @@ export const upload = multer({dest:"uploads/"})
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: "100mb" }));
+app.use("/api", baseRouter.router);
 
 app.get("/healthy", (req, res)=>{
     return res.send("Healthy")

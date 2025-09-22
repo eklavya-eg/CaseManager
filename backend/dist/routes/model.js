@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.router = void 0;
+const express_1 = require("express");
+const model_1 = require("../controllers/model");
+const __1 = require("..");
+exports.router = (0, express_1.Router)();
+exports.router.get("/model", model_1.modelController.getModels);
+exports.router.post("/model", __1.upload.single("file"), model_1.modelController.postModel);
+exports.router.get("/model/:id", model_1.modelController.getModel);
+exports.router.delete("/model:id", model_1.modelController.deleteModel);

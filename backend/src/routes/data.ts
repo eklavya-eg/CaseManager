@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { deleteDataset, getDataset, getDatasets, postDataset } from "../controllers/data";
+import { dataController } from "../controllers/data";
 import { upload } from "..";
 
-const router = Router();
+export const router = Router();
 
-router.get("/data", getDatasets)
-router.post("/data", upload.single("file"), postDataset)
-router.get("/data/:id", getDataset)
-router.delete("/data:id", deleteDataset)
+router.get("/data", dataController.getDatasets)
+router.post("/data", upload.single("file"), dataController.postDataset)
+router.get("/data/:id", dataController.getDataset)
+router.delete("/data:id", dataController.deleteDataset)

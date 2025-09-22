@@ -1,73 +1,51 @@
 import { Request, Response } from "express";
 import { prismaClient } from "../db/db"
+import { BaseController } from "./base";
 import { modelPost } from "../schemas/model";
 
-export const getModels = async (req: Request, res: Response) => {
-    try {
-        const models = await prismaClient.model.findMany(
-            {
-                select: {data:false},
-                orderBy: {createdAt: "desc"}
-            }
-        );
-        return res.status(200).json({message: "Success", models})
+class ModelController extends BaseController {
+    constructor(){
+        super(prismaClient.model);
     }
-    catch {
-       return res.status(500).json({message: "Failed"})
+    async getModels(req: Request, res: Response){
+        try {
+            const models = await this.findAll();
+            return res.json(models);
+        } catch (error) {
+            return res.status(500).json({message: "Internal Server Error"});
+        }
+    }
+    async getModel(req: Request, res: Response){
+        try {
+            const model = await this.findById(req.params.id);
+            return res.json(model);
+        } catch (error) {
+            return res.status(500).json({message: "Internal Server Error"});
+        }
+    }
+    async postModel(req: Request, res: Response){
+        try {
+            const {success, data} = modelPost.safeParse(req.body);
+            if(!success && !req.file){
+                return res.status(400).json({message: "Wrong Inputs"});
+            }
+            const model = await this.create({
+                ...data,
+                data: req.file?.buffer
+            });
+            return res.json(model);
+        } catch (error) {
+            return res.status(500).json({message: "Internal Server Error"});
+        }
+    }
+    async deleteModel(req: Request, res: Response){
+        try {
+            const model = await this.delete(req.params.id);
+            return res.json(model);
+        } catch (error) {
+            return res.status(500).json({message: "Internal Server Error"});
+        }
     }
 }
 
-export const getModel = async (req: Request, res: Response) => {
-    try {
-        const {id} = req.params
-        if(!id){return res.status(403).json({message:"Invalid Input"})}
-        const model = await prismaClient.model.findFirst(
-            {
-                where: {id: id}
-            }
-        );
-        if(!model){return res.status(404).json({message:"Failed"})}
-        return res.status(200).json({message: "Success", model})
-    }
-    catch {
-       return res.status(500).json({message: "Failed"})
-    }
-}
-
-export const postModel = async (req: Request, res: Response) => {
-    try {
-        const parsed = modelPost.safeParse(req.body);
-        if(!parsed.success){return res.status(403).json({message:"Invalid Input"})}
-        const file = req.file;
-        if(!file) {return res.status(403).json({message:"Invalid Input"})}
-        const model = await prismaClient.model.create({
-            data: {
-                name: parsed.data.name,
-                // @ts-ignore
-                modelType: parsed.data.type,
-                data: file.buffer
-            }
-        })
-        return res.status(201).json({message: "Success", model})
-    }
-    catch {
-        return res.status(500).json({message: "Failed"})
-    }
-}
-
-export const deleteModel = async (req: Request, res: Response) => {
-    try {
-        const {id} = req.params
-        if(!id){return res.status(403).json({message:"Invalid Input"})}
-        const model = await prismaClient.model.delete(
-            {
-                where: {id: id}
-            }
-        );
-        if(!model){return res.status(404).json({message:"Failed"})}
-        return res.status(203).json({message: "Success", model})
-    }
-    catch {
-       return res.status(500).json({message: "Failed"})
-    }
-}
+export const modelController = new ModelController();
