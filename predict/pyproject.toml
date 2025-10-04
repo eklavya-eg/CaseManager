@@ -1,0 +1,26 @@
+[project]
+name = "predict"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "eklavya-eg",email = "emessage.eg@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "redis (>=4.5.0)",
+    "asyncio (>=4.0.0,<5.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "pandas (>=2.3.3,<3.0.0)",
+    "motor (>=3.7.1,<4.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "fastapi (>=0.118.0,<0.119.0)",
+    "scikit-learn (>=1.7.2,<2.0.0)",
+    "catboost (>=1.2.8,<2.0.0)",
+    "xgboost (>=3.0.5,<4.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -26,7 +26,7 @@ class BrokerController {
                 });
             }
             const { modelId, datasetId } = data;
-            const re = yield redis_1.default.lPush("inference-queue", JSON.stringify({ modelId: modelId, datasetId: datasetId }));
+            const re = yield redis_1.default.lPush("predict", JSON.stringify({ model_id: modelId, data_id: datasetId }));
             if (re === 1) {
                 return res.json({ message: "Success" });
             }

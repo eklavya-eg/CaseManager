@@ -10,7 +10,7 @@ class BrokerController {
             message: "Wrong Inputs"
         })}
         const {modelId, datasetId} = data;
-        const re = await redisClient.lPush("inference-queue", JSON.stringify({modelId:modelId, datasetId:datasetId}))
+        const re = await redisClient.lPush("predict", JSON.stringify({model_id:modelId, data_id:datasetId}))
         if(re===1){
             return res.json({message: "Success"})
         }

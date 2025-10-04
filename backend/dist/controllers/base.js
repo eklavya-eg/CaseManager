@@ -16,45 +16,55 @@ class BaseController {
     }
     findAllWithData() {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.prismaModel.findAll();
+            return yield this.prismaModel.findMany();
         });
     }
     findAllWithPagination(page, limit) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.prismaModel.findAllWithPagination(page, limit, {
+            const skip = (page - 1) * limit;
+            return yield this.prismaModel.findMany({
+                skip,
+                take: limit,
                 select: {
                     data: false
                 }
             });
         });
     }
-    findAll() {
+    findAll(select) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.prismaModel.findAll({
-                select: {
-                    data: false
-                }
+            return yield this.prismaModel.findMany({
+                select: select
             });
         });
     }
     findById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.prismaModel.findById(id);
+            return yield this.prismaModel.findUnique({
+                where: { id }
+            });
         });
     }
     create(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.prismaModel.create(data);
+            return yield this.prismaModel.create({
+                data
+            });
         });
     }
     update(id, data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.prismaModel.update(id, data);
+            return yield this.prismaModel.update({
+                where: { id },
+                data
+            });
         });
     }
     delete(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.prismaModel.delete(id);
+            return yield this.prismaModel.delete({
+                where: { id }
+            });
         });
     }
 }

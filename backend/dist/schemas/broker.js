@@ -7,5 +7,7 @@ exports.pushInferenceSchema = void 0;
 const zod_1 = __importDefault(require("zod"));
 exports.pushInferenceSchema = zod_1.default.object({
     modelId: zod_1.default.string(),
-    datasetId: zod_1.default.string()
+    datasetId: zod_1.default.string(),
+    accuracy_check: zod_1.default.boolean().default(false),
+    columnName: zod_1.default.string().optional()
 });

@@ -1,0 +1,7 @@
+redis>=4.5.0
+asyncio
+python-dotenv
+pandas
+motor
+httpx
+pickle
