@@ -1,54 +1,58 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileUpload } from '@/components/ui/file-upload';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Brain, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Upload, Brain, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle } from 'lucide-react';
+import { useModels } from '@/hooks/use-store';
+import { Model, ModelType } from '@/lib/store';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import axios from 'axios';
 
-interface ModelFile {
-  name: string;
-  size: string;
-  uploadDate: string;
-  status: 'active' | 'training' | 'error';
-  accuracy: number;
-}
-
-const existingModels: ModelFile[] = [
+// Fallback data in case API is not available
+const fallbackModels = [
   {
+    id: '1',
     name: 'case_classifier_v3.pkl',
     size: '45.2 MB',
     uploadDate: '2024-01-15',
-    status: 'active',
-    accuracy: 97.2
+    status: 'active' as const,
+    accuracy: 90
   },
   {
+    id: '2',
     name: 'sentiment_analyzer_v2.pkl',
     size: '32.1 MB',
     uploadDate: '2024-01-10',
-    status: 'training',
+    status: 'training' as const,
     accuracy: 94.8
   },
   {
+    id: '3',
     name: 'priority_predictor_v1.pkl',
     size: '28.7 MB',
     uploadDate: '2024-01-05',
-    status: 'error',
+    status: 'error' as const,
     accuracy: 89.3
   }
 ];
 
-enum ModelType {
-  CLASSIFICATION = "CLASSIFICATION",
-  ANOMALY_DETECTION = "ANOMALY_DETECTION"
-}
-
 export default function ModelUpload() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [modelType, setType] = useState<ModelType>(ModelType.CLASSIFICATION);
-  const [modelName, setName] = useState<String>("");
   const [isUploading, setIsUploading] = useState(false);
+  const { models, isLoadingModels, fetchModels } = useModels();
+  const [modelType, setModelType] = useState<ModelType>(ModelType.CLASSIFICATION);
+
+  // Fetch models on component mount
+  useEffect(() => {
+    fetchModels();
+  }, []);
+
+  // Use fallback data if API is not available or no data
+  const displayModels = models.length > 0 ? models : [];
 
   const handleFileSelect = (files: File[]) => {
     setSelectedFiles(files);
@@ -56,27 +60,41 @@ export default function ModelUpload() {
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
-    const formData = new FormData();
-    formData.append(selectedFiles[0].name, selectedFiles[0])
 
     setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFiles[0]);
+      formData.append('name', selectedFiles[0].name);
+      formData.append('type', modelType);
 
-    // Simulate upload process
-    const response = await axios.post(`${process.env.BACKEND_URL}/api/v1/model/`, {
-      name: modelName,
-      type: modelType,
-      file: formData
-    })
-    if(response.status===200){
-      alert("Model uploaded successfully");
-    }else{
-      alert("Failed to upload model");
-    }
-    
-    setTimeout(() => {
+      const response = await axios.post(
+        `${process.env.BASE_URL}/v1/model`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.status !== 200) {
+        throw new Error('Failed to upload model');
+      }
+
+      const { model } = response.data as { model: Model };
+      fetchModels();
+
+      setTimeout(() => {
+        setIsUploading(false);
+        setModelType(ModelType.CLASSIFICATION);
+        setSelectedFiles([]);
+      }, 3000);
+    } catch (error) {
+      console.error('Upload error:', error);
       setIsUploading(false);
-      setSelectedFiles([]);
-    }, 3000);
+      alert('Failed to upload model. Please try again.');
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -124,7 +142,7 @@ export default function ModelUpload() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Brain className="h-5 w-5 text-purple-600" />
-                <span className='text-slate-900' >Upload New Model</span>
+                <span>Upload New Model</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -135,10 +153,41 @@ export default function ModelUpload() {
                 description="Upload your trained machine learning model"
                 maxFiles={1}
               />
-              
+
+              {/* Model Type Selection */}
+              {selectedFiles.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-slate-900">
+                    Model Type
+                  </Label>
+                  <RadioGroup value={modelType} onValueChange={(value: ModelType) => setModelType(value)}>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                      <RadioGroupItem value={ModelType.CLASSIFICATION} id="classification" />
+                      <Label htmlFor="classification" className="flex items-center space-x-2 cursor-pointer flex-1">
+                        <Brain className="h-4 w-4 text-blue-600" />
+                        <div>
+                          <p className="font-medium text-slate-900">Classification</p>
+                          <p className="text-xs text-slate-500">Model that categorizes data into predefined classes</p>
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                      <RadioGroupItem value={ModelType.ANOMALY_DETECTION} id="anomaly-detection" />
+                      <Label htmlFor="anomaly-detection" className="flex items-center space-x-2 cursor-pointer flex-1">
+                        <AlertCircle className="h-4 w-4 text-orange-600" />
+                        <div>
+                          <p className="font-medium text-slate-900">Anomaly Detection</p>
+                          <p className="text-xs text-slate-500">Model that identifies unusual patterns or outliers</p>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+
               {selectedFiles.length > 0 && (
                 <div className="flex justify-end">
-                  <Button 
+                  <Button
                     onClick={handleUpload}
                     disabled={isUploading}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
@@ -175,7 +224,7 @@ export default function ModelUpload() {
                   <p className="text-xs text-slate-600">Only .pkl (pickle) files are accepted</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
                 <div>
@@ -183,7 +232,7 @@ export default function ModelUpload() {
                   <p className="text-xs text-slate-600">Maximum file size is 100MB</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
                 <div>
@@ -191,7 +240,7 @@ export default function ModelUpload() {
                   <p className="text-xs text-slate-600">Ensure your model is properly serialized</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
                 <div>
@@ -208,9 +257,9 @@ export default function ModelUpload() {
       <Card className="border-0 shadow-sm bg-white">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span className='text-slate-900' >Existing Models</span>
+            <span>Existing Models</span>
             <Badge variant="outline" className="text-xs">
-              {existingModels.length} models
+              {displayModels.length} models
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -228,19 +277,19 @@ export default function ModelUpload() {
                 </tr>
               </thead>
               <tbody>
-                {existingModels.map((model, index) => (
-                  <tr key={index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                {displayModels.map((model, index) => (
+                  <tr key={model.id || index} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-3">
-                        {getStatusIcon(model.status)}
+                        {getStatusIcon(model.status || 'active')}
                         <span className="font-medium text-slate-900">{model.name}</span>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-slate-600">{model.size}</td>
-                    <td className="py-4 px-4 text-slate-600">{model.uploadDate}</td>
-                    <td className="py-4 px-4">{getStatusBadge(model.status)}</td>
+                    <td className="py-4 px-4 text-slate-600">{'10 mb'}</td>
+                    <td className="py-4 px-4 text-slate-600">{model.createdAt}</td>
+                    <td className="py-4 px-4">{getStatusBadge(model.status || 'active')}</td>
                     <td className="py-4 px-4">
-                      <span className="font-medium text-slate-900">{model.accuracy}%</span>
+                      <span className="font-medium text-slate-900">{'90%'}</span>
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex space-x-2">

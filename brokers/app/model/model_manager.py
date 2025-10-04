@@ -6,6 +6,7 @@ import pandas as pd
 import time
 import base64
 from app import db
+import os
 
 class ModelManager:
     models = {}     # {model_id: (model, last_used_time)}
@@ -14,7 +15,7 @@ class ModelManager:
     ttl = 60*60
     eviction_interval = 60
     client = httpx.AsyncClient()
-    base_url = "http://localhost:3000"
+    base_url = os.getenv("BASE_URL", "http://localhost:3000")
     mongo_client = db
     mongo_lock = asyncio.Lock()
 

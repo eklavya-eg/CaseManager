@@ -118,7 +118,7 @@ export default function AccuracyCheck() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Target className="h-5 w-5 text-blue-600" />
-              <span className='text-slate-900' >Model Performance Comparison</span>
+              <span>Model Performance Comparison</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -147,7 +147,7 @@ export default function AccuracyCheck() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <TrendingUp className="h-5 w-5 text-green-600" />
-              <span className='text-slate-900' >Accuracy Trend</span>
+              <span>Accuracy Trend</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -180,7 +180,7 @@ export default function AccuracyCheck() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Zap className="h-5 w-5 text-orange-600" />
-              <span className='text-slate-900' >Detailed Model Metrics</span>
+              <span>Detailed Model Metrics</span>
             </CardTitle>
           </CardHeader>
           <CardContent>

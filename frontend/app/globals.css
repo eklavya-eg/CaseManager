@@ -30,7 +30,7 @@
   --color-chart-5: hsl(27 87% 67%);
 }
 
-@theme .dark {
+/* @theme .dark {
   --color-background: hsl(0 0% 3.9%);
   --color-foreground: hsl(0 0% 98%);
   --color-card: hsl(0 0% 3.9%);
@@ -56,7 +56,7 @@
   --color-chart-3: hsl(30 80% 55%);
   --color-chart-4: hsl(280 65% 60%);
   --color-chart-5: hsl(340 75% 55%);
-}
+} */
 
 @layer base {
   * {
