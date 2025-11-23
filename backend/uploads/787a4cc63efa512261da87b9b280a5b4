@@ -1,0 +1,10 @@
+transaction_id,customer_id,timestamp,transaction_amount,transaction_type,origin_country,destination_country,is_foreign_transaction,account_age_days,customer_type,is_pep,suspicious_flag,risk_score,transaction_channel,customer_income_bracket,previous_alerts_count,matching_sanction_list,transaction_purpose,frequency_last_30_days,related_account_ids,entity_linkage_score
+TX10000,CUST7311,2025-05-29 02:37:34,15917.49,deposit,South Africa,South Africa,False,1070,Co-op,False,0,0.15,Mobile,High,2,False,equipment purchase,17,CUST3930,0.14
+TX10001,CUST3281,2024-12-01 18:47:26,25118.62,mobile,South Africa,UAE,True,398,NGO,False,0,0.35,Online,High,0,False,loan,29,"CUST2744,CUST9797,CUST2895,CUST8609",0.42
+TX10002,CUST6409,2025-04-25 12:41:28,18464.46,deposit,South Africa,India,True,422,NGO,False,0,0.46,Mobile,Unknown,2,False,investment,2,"CUST4736,CUST3216,CUST1569,CUST7478",0.13
+TX10003,CUST9989,2025-06-15 21:43:08,15744.02,cash,South Africa,South Africa,False,2957,Co-op,False,0,0.31,Mobile,High,0,False,refund,23,"CUST3560,CUST6715,CUST1880,CUST8499,CUST3747",0.02
+TX10004,CUST2031,2024-12-15 12:03:19,11020.97,wire,South Africa,India,True,918,Business,False,0,0.27,ATM,Low,1,False,aid transfer,30,"CUST8288,CUST5366,CUST2673,CUST1208",0.5
+TX10005,CUST9016,2024-07-20 21:23:09,20763.19,cash,South Africa,Nigeria,True,2267,NGO,False,0,0.41,Online,High,1,False,loan,20,CUST2559,0.43
+TX10006,CUST7306,2024-10-13 17:19:23,11510.38,mobile,South Africa,India,True,1001,NGO,False,0,0.02,Branch,Unknown,0,False,loan,22,"CUST6993,CUST2369,CUST9649,CUST6241",0.34
+TX10007,CUST3133,2025-01-19 17:28:11,44470.49,wire,South Africa,South Africa,False,338,Co-op,False,0,0.26,Online,Medium,2,False,groceries,19,"CUST5152,CUST3072,CUST9165,CUST9833",0.19
+TX10008,CUST5509,2025-01-09 21:13:06,66298.24,deposit,South Africa,Switzerland,True,2714,NGO,False,0,0.24,Branch,Medium,0,False,salary,24,"CUST5916,CUST4796,CUST5643,CUST5953",0.46

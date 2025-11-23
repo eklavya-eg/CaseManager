@@ -4,20 +4,22 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  Upload, 
-  Database, 
-  BarChart3, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Upload,
+  Database,
+  BarChart3,
+  Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Brain
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Model Upload', href: '/model-upload', icon: Upload },
   { name: 'Data Upload', href: '/data-upload', icon: Database },
+  { name: 'Predictions', href: '/predictions', icon: Brain },
   { name: 'Accuracy Check', href: '/accuracy-check', icon: BarChart3 },
 ];
 
@@ -37,7 +39,7 @@ export function Sidebar() {
 
       {/* Sidebar overlay for mobile */}
       {isOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50"
           onClick={() => setIsOpen(false)}
         />

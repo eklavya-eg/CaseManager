@@ -36,12 +36,10 @@ class ModelController extends base_1.BaseController {
         });
         this.getModel = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log(req.params.id);
                 const model = yield this.findById(req.params.id);
                 return res.json(model);
             }
             catch (error) {
-                console.log(error);
                 return res.status(500).json({ message: "Internal Server Error" });
             }
         });

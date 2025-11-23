@@ -15,10 +15,24 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.brokerController = void 0;
 const redis_1 = __importDefault(require("../db/redis"));
 const broker_1 = require("../schemas/broker");
+const db_1 = require("../db/db");
 class BrokerController {
-    constructor() { }
-    pushInference(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
+    constructor() {
+        this.getModelName = (modelId) => __awaiter(this, void 0, void 0, function* () {
+            const modelName = yield db_1.prismaClient.model.findUnique({
+                select: { name: true },
+                where: { id: modelId }
+            });
+            return (modelName === null || modelName === void 0 ? void 0 : modelName.name) || "";
+        });
+        this.getDatasetName = (datasetId) => __awaiter(this, void 0, void 0, function* () {
+            const datasetName = yield db_1.prismaClient.data.findUnique({
+                select: { name: true },
+                where: { id: datasetId }
+            });
+            return (datasetName === null || datasetName === void 0 ? void 0 : datasetName.name) || "";
+        });
+        this.pushInference = (req, res) => __awaiter(this, void 0, void 0, function* () {
             const { success, data } = broker_1.pushInferenceSchema.safeParse(req.body);
             if (!success) {
                 return res.status(400).json({
@@ -26,7 +40,10 @@ class BrokerController {
                 });
             }
             const { modelId, datasetId } = data;
-            const re = yield redis_1.default.lPush("predict", JSON.stringify({ model_id: modelId, data_id: datasetId }));
+            const re = yield redis_1.default.lPush("predict", JSON.stringify({
+                model_id: modelId,
+                data_id: datasetId,
+            }));
             if (re === 1) {
                 return res.json({ message: "Success" });
             }
