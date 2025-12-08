@@ -7,7 +7,7 @@ interface DataPoint {
   color: string;
 }
 
-interface WaterfallChartProps {
+export interface WaterfallChartProps {
   data: DataPoint[];
 }
 

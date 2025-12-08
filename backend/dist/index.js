@@ -13,7 +13,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+const path_1 = __importDefault(require("path"));
+dotenv_1.default.config({ path: path_1.default.join(process.cwd(), ".env") });
+process.env.DATABASE_URL = "postgresql://user:user@localhost:5432/casemanager";
+process.env.MONGODB_URI = "mongodb://localhost:27017";
+process.env.STATUS_DB = "statuses";
+process.env.PREDICTION_DB = "predictions";
+process.env.PREDICTION_STATUS_COLLECTION = "prediction_statuses";
+process.env.PORT = "3000";
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const db_1 = require("./db/db");
@@ -40,7 +47,7 @@ function startServer() {
         try {
             yield db_1.prismaClient.$connect();
             console.log("✅ Database connected");
-            app.listen(3000, () => console.log("✅ Server running on port 3000"));
+            app.listen(process.env.PORT, () => console.log(`✅ Server running on port ${process.env.PORT}`));
         }
         catch (error) {
             console.error("❌ Database connection failed", error);

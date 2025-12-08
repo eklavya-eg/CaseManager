@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Database, Brain, ArrowRight, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePredictions } from '@/hooks/use-predictions';
-import WaterfallChart from '@/components/WaterFallChart';
+import { predictionsApi } from '@/lib/api';
 
 interface Prediction {
     id: string;
@@ -25,12 +25,11 @@ export default function PredictionsPage() {
         predictions,
         selectedPrediction,
         predictionData,
-        selectedRows,
         shapValues,
         loading,
         error,
         setSelectedPrediction,
-        toggleRowSelection,
+        fetchShapValues,
         clearError
     } = usePredictions();
 
@@ -79,12 +78,11 @@ export default function PredictionsPage() {
             <PredictionDashboard
                 prediction={selectedPrediction}
                 predictionData={predictionData}
-                selectedRows={selectedRows}
                 shapValues={shapValues}
                 loading={loading}
                 error={error}
                 onBack={() => setSelectedPrediction(null)}
-                toggleRowSelection={toggleRowSelection}
+                fetchShapValues={fetchShapValues}
                 clearError={clearError}
             />
         );
@@ -169,22 +167,20 @@ export default function PredictionsPage() {
 function PredictionDashboard({
     prediction,
     predictionData,
-    selectedRows,
     shapValues,
     loading,
     error,
     onBack,
-    toggleRowSelection,
+    fetchShapValues,
     clearError
 }: {
     prediction: any;
     predictionData: any[];
-    selectedRows: string[];
     shapValues: Record<string, any[]>;
     loading: boolean;
     error: string | null;
     onBack: () => void;
-    toggleRowSelection: (rowId: string) => void;
+    fetchShapValues: (rowId: string, modelId: string, dataId: string, finalcols: string[]) => Promise<void>;
     clearError: () => void;
 }) {
 
@@ -248,7 +244,7 @@ function PredictionDashboard({
                         Prediction Results ({predictionData.length} rows)
                     </CardTitle>
                     <p className="text-sm text-slate-600">
-                        Select rows to view detailed SHAP analysis
+                        Click on a row to view detailed SHAP analysis
                     </p>
                 </CardHeader>
                 <CardContent>
@@ -262,7 +258,6 @@ function PredictionDashboard({
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-slate-200">
-                                        <th className="text-left py-3 px-4 font-medium text-slate-600">Select</th>
                                         <th className="text-left py-3 px-4 font-medium text-slate-600">Row ID</th>
                                         <th className="text-left py-3 px-4 font-medium text-slate-600">Prediction</th>
                                         {predictionData.length > 0 && Object.keys(predictionData[0])
@@ -283,75 +278,68 @@ function PredictionDashboard({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {predictionData.map((row) => (
-                                        <tr
-                                            key={row._id}
-                                            className={`border-b border-slate-100 hover:bg-slate-50 cursor-pointer ${selectedRows.includes(row._id) ? 'bg-blue-50' : ''
-                                                }`}
-                                            onClick={() => toggleRowSelection(row._id)}
-                                        >
-                                            <td className="py-3 px-4">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedRows.includes(row._id)}
-                                                    onChange={() => toggleRowSelection(row._id)}
-                                                    className="rounded border-slate-300"
-                                                />
-                                            </td>
-                                            <td className="py-3 px-4 font-medium text-slate-900">{row._id}</td>
-                                            <td className="py-3 px-4">
-                                                <Badge className={`${getPredictionColor(row.predictions === 1 ? 'High Risk' : 'Low Risk')} border`}>
-                                                    {row.predictions === 1 ? 'High Risk' : 'Low Risk'}
-                                                </Badge>
-                                            </td>
-                                            {Object.keys(row)
-                                                .filter(key => key !== '_id' && key !== 'predictions' && key !== 'fraud_reported' && key !== '_c39')
-                                                .slice(0, 6) // Show first 6 features
-                                                .map((key) => (
-                                                    <td key={key} className="py-3 px-4 text-slate-600">
-                                                        {typeof row[key] === 'number' ? row[key].toFixed(2) : String(row[key] || '').substring(0, 20)}
-                                                    </td>
-                                                ))}
-                                        </tr>
-                                    ))}
+                                    {predictionData.map((row) => {
+                                        const handleRowClick = async () => {
+                                            const rowId = row._id;
+
+                                            try {
+                                                // Check if SHAP values are already fetched
+                                                let shapData = shapValues[rowId];
+
+                                                // If not fetched, fetch them directly from API
+                                                if (!shapData) {
+                                                    const parts = prediction.id.split('_');
+                                                    if (parts.length >= 2) {
+                                                        const modelId = parts[0];
+                                                        const dataId = parts.slice(1).join('_');
+                                                        shapData = await predictionsApi.getShapValues(rowId, modelId, dataId, prediction.finalcols);
+                                                        // Also update the hook state for future use
+                                                        await fetchShapValues(rowId, modelId, dataId, prediction.finalcols);
+                                                    }
+                                                }
+
+                                                // Store data in sessionStorage
+                                                if (shapData) {
+                                                    const storageKey = `shap_data_${rowId}`;
+                                                    sessionStorage.setItem(storageKey, JSON.stringify(shapData));
+                                                    // Open graph page in new tab
+                                                    window.open(`/graph?rowId=${rowId}`, '_blank');
+                                                }
+                                            } catch (error) {
+                                                console.error('Error fetching SHAP values:', error);
+                                                alert('Failed to load SHAP values. Please try again.');
+                                            }
+                                        };
+
+                                        return (
+                                            <tr
+                                                key={row._id}
+                                                className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+                                                onClick={handleRowClick}
+                                            >
+                                                <td className="py-3 px-4 font-medium text-slate-900">{row._id}</td>
+                                                <td className="py-3 px-4">
+                                                    <Badge className={`${getPredictionColor(row.predictions === 1 ? 'High Risk' : 'Low Risk')} border`}>
+                                                        {row.predictions === 1 ? 'High Risk' : 'Low Risk'}
+                                                    </Badge>
+                                                </td>
+                                                {Object.keys(row)
+                                                    .filter(key => key !== '_id' && key !== 'predictions' && key !== 'fraud_reported' && key !== '_c39')
+                                                    .slice(0, 6) // Show first 6 features
+                                                    .map((key) => (
+                                                        <td key={key} className="py-3 px-4 text-slate-600">
+                                                            {typeof row[key] === 'number' ? row[key].toFixed(2) : String(row[key] || '').substring(0, 20)}
+                                                        </td>
+                                                    ))}
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
                     )}
                 </CardContent>
             </Card>
-
-            {/* SHAP Waterfall Plots */}
-            {selectedRows.length > 0 && (
-                <div className="space-y-6">
-                    <h2 className="text-2xl font-bold text-slate-900">SHAP Analysis</h2>
-                    <div className=" gap-6">
-                        {selectedRows.map((rowId) => {
-                            const row = predictionData.find(r => r._id === rowId);
-                            if (!row) return null;
-
-                            return (
-                                <Card key={rowId} className="border border-slate-200 shadow-lg bg-white overflow-hidden">
-                                    <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                                        <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                                            <div className={`w-3 h-3 rounded-full ${row.predictions === 1 ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                            {rowId} - SHAP Values
-                                        </CardTitle>
-                                        <p className="text-sm text-slate-600">
-                                            Feature importance for <span className={`font-semibold ${row.predictions === 1 ? 'text-red-600' : 'text-green-600'}`}>
-                                                {row.predictions === 1 ? 'High Risk' : 'Low Risk'}
-                                            </span> prediction
-                                        </p>
-                                    </CardHeader>
-                                    <CardContent className="p-0">
-                                        <WaterfallChart data={shapValues[rowId]} />
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
