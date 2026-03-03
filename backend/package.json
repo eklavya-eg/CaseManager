@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "build": "tsc -b",
+    "check": "ts-node src/check.ts",
     "dev": "npm run build && npm run start",
     "db:generate": "npx prisma generate",
     "db:migrate": "npx prisma migrate dev --name init"
@@ -24,6 +25,7 @@
     "@types/mongoose": "^5.11.96",
     "@types/multer": "^2.0.0",
     "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "mongoose": "^8.19.2",

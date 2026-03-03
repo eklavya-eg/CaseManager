@@ -1,26 +1,34 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, RadialBarChart, RadialBar, PieChart, Pie, Cell } from 'recharts';
-import { Target, TrendingUp, AlertTriangle, CheckCircle, Zap } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BASE_URL } from '@/config';
+import axios from 'axios';
+import { AlertTriangle, CheckCircle, Target, TrendingUp, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 // Dummy data for accuracy metrics
 const modelAccuracy = [
-  { model: 'Case Classifier', accuracy: 97.2, precision: 95.8, recall: 94.3, f1: 95.0 },
-  { model: 'Sentiment Analyzer', accuracy: 94.8, precision: 93.2, recall: 92.7, f1: 92.9 },
-  { model: 'Priority Predictor', accuracy: 91.5, precision: 89.8, recall: 88.4, f1: 89.1 },
-  { model: 'Category Classifier', accuracy: 96.3, precision: 94.7, recall: 95.1, f1: 94.9 },
+  { model_id: '1', model: 'Case Classifier', accuracy: 97.2, precision: 95.8, recall: 94.3, f1: 95.0, fp: 10 },
+  { model_id: '2', model: 'Sentiment Analyzer', accuracy: 94.8, precision: 93.2, recall: 92.7, f1: 92.9, fp: 8 },
+  { model_id: '3', model: 'Priority Predictor', accuracy: 91.5, precision: 89.8, recall: 88.4, f1: 89.1, fp: 4 },
+  { model_id: '4', model: 'Category Classifier', accuracy: 96.3, precision: 94.7, recall: 95.1, f1: 94.9, fp: 9 },
 ];
 
 const accuracyTrend = [
-  { date: 'Jan 1', accuracy: 94.2 },
-  { date: 'Jan 8', accuracy: 95.1 },
-  { date: 'Jan 15', accuracy: 94.8 },
-  { date: 'Jan 22', accuracy: 96.2 },
-  { date: 'Jan 29', accuracy: 97.2 },
-  { date: 'Feb 5', accuracy: 96.8 },
-  { date: 'Feb 12', accuracy: 97.5 },
+  { date: 'Jan', accuracy: 94.2 },
+  { date: 'Feb', accuracy: 96.8 },
+  { date: 'Mar', accuracy: 95.1 },
+  { date: 'Apr', accuracy: 94.8 },
+  { date: 'May', accuracy: 96.2 },
+  { date: 'Jun', accuracy: 97.2 },
+  { date: 'Jul', accuracy: 97.5 },
+  { date: 'Aug', accuracy: 98.2 },
+  { date: 'Sep', accuracy: 98.8 },
+  { date: 'Oct', accuracy: 99.2 },
+  { date: 'Nov', accuracy: 99.5 },
+  { date: 'Dec', accuracy: 99.8 },
 ];
 
 const confusionMatrix = [
@@ -43,6 +51,93 @@ const performanceMetrics = [
 ];
 
 export default function AccuracyCheck() {
+  const [data, setData] = useState();
+  const [metrics, setMetrics] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]); // accuracy, fp, fn, tp, tn, total
+  const [performanceMetrics, setPerformanceMetrics] = useState<{ name: string, value: number, target: number, color: string }[]>([]);
+  const [accuracyTrend, setAccuracyTrend] = useState<{ date: string, accuracy: number }[]>([]);
+  const [modelAccuracy, setModelAccuracy] = useState<{ model_id: string, model: string, accuracy: number, precision: number, recall: number, f1: number, fp: number }[]>([]);
+  const fetchData = async () => {
+    const mainData = await axios.get(`${BASE_URL}/v1/prediction-statuses`, {
+      params: {
+      }
+    });
+    const data = mainData.data.statuses.filter(({ status, accuracy }: { status: string, accuracy: number }) => {
+      return status === "success" && accuracy > 0;
+    })
+    const new_metrics = [0, 0, 0, 0, 0, 0];
+    for (const status of data) {
+      delete status?.finalcols;
+      new_metrics[0] += status?.accuracy || 0;
+      new_metrics[1] += status?.false_positive || 0;
+      new_metrics[2] += status?.false_negative || 0;
+      new_metrics[3] += status?.true_positive || 0;
+      new_metrics[4] += status?.true_negative || 0;
+      new_metrics[5] += (status?.accuracy | 0) == 0 ? 0 : status?.total || 0;
+    }
+    setMetrics(new_metrics);
+    setData(data);
+    console.log(data);
+    const precision = new_metrics[3] / (new_metrics[1] + new_metrics[3]);
+    const recall = new_metrics[3] / (new_metrics[2] + new_metrics[3]);
+    const f1 = 2 * precision * recall / (precision + recall);
+    setPerformanceMetrics([
+      { name: 'Accuracy', value: Number((new_metrics[0] * 100 / data.length).toFixed(2)), target: 95.0, color: '#10B981' },
+      { name: 'Precision', value: Number((precision * 100).toFixed(2)), target: 90.0, color: '#3B82F6' },
+      { name: 'Recall', value: Number((recall * 100).toFixed(2)), target: 88.0, color: '#8B5CF6' },
+      { name: 'F1-Score', value: Number((f1 * 100).toFixed(2)), target: 89.0, color: '#F59E0B' },
+    ]);
+
+    const sorted = data.sort(
+      (a:{created_at:string}, b:{created_at:string}) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+
+    const monthMap: { [key: string]: number[] } = {};
+
+    sorted.forEach((d:{created_at:string, accuracy:number}) => {
+      const dt = new Date(d.created_at)
+      const key = dt.toLocaleString('en-US', { month: 'short' })
+
+      if (!monthMap[key]) monthMap[key] = []
+      monthMap[key].push(d.accuracy * 100)
+    })
+
+    const accuracyTrend = Object.entries(monthMap).map(
+      ([date, accs]) => ({
+        date,
+        accuracy: +(accs.reduce((a, b) => a + b, 0) / accs.length).toFixed(1)
+      })
+    )
+
+    setAccuracyTrend(accuracyTrend);
+
+    const groupedByModel = data.reduce((acc:any, d:any) => {
+      (acc[d.model_id] ||= []).push(d)
+      return acc
+    }, {})
+    const keys = Object.keys(groupedByModel);
+    const modelAccuracies = [];
+    for (const model_id of keys) {
+      const model = groupedByModel[model_id];
+      const accuracy = model.reduce((s:number, o:{accuracy:number}) => s + o.accuracy, 0) / model.length;
+      const fp = model.reduce((s:number, o:{false_positive:number}) => s + o.false_positive, 0);
+      const fn = model.reduce((s:number, o:{false_negative:number}) => s + o.false_negative, 0);
+      const tp = model.reduce((s:number, o:{true_positive:number}) => s + o.true_positive, 0);
+      const tn = model.reduce((s:number, o:{true_negative:number}) => s + o.true_negative, 0);
+      const total = model.reduce((s:number, o:{total:number}) => s + o.total, 0);
+      const precision = ((tp / (tp + fp))*100).toFixed(2);
+      const recall = ((tp / (tp + fn))*100).toFixed(2);
+      const f1 = ((2 * Number(precision) * Number(recall) / (Number(precision) + Number(recall)))).toFixed(2);
+      const model_name = model[0]?.model_name || '';
+      const new_model = { model_id, model:model_name, accuracy:Number(accuracy.toFixed(2)), precision:Number(precision), recall:Number(recall), f1:Number(f1), fp: Number((fp*100/total).toFixed(2)) };
+      modelAccuracies.push(new_model);
+    }
+
+    setModelAccuracy(modelAccuracies);
+
+  }
+  useEffect(() => {
+    fetchData();
+  }, [])
   return (
     <div className="p-6 lg:p-8 space-y-8">
       {/* Header */}
@@ -73,12 +168,11 @@ export default function AccuracyCheck() {
                     ) : (
                       <AlertTriangle className="h-4 w-4 text-orange-600" />
                     )}
-                    <Badge 
-                      className={`ml-2 ${
-                        metric.value >= metric.target 
-                          ? 'bg-green-100 text-green-800 hover:bg-green-100' 
-                          : 'bg-orange-100 text-orange-800 hover:bg-orange-100'
-                      }`}
+                    <Badge
+                      className={`ml-2 ${metric.value >= metric.target
+                        ? 'bg-green-100 text-green-800 hover:bg-green-100'
+                        : 'bg-orange-100 text-orange-800 hover:bg-orange-100'
+                        }`}
                     >
                       {metric.value >= metric.target ? 'On Target' : 'Below Target'}
                     </Badge>
@@ -127,9 +221,9 @@ export default function AccuracyCheck() {
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis dataKey="model" tick={{ fontSize: 12 }} />
                 <YAxis domain={[80, 100]} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
                     border: '1px solid #e2e8f0',
                     borderRadius: '8px'
                   }}
@@ -156,17 +250,17 @@ export default function AccuracyCheck() {
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis dataKey="date" />
                 <YAxis domain={[90, 100]} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
                     border: '1px solid #e2e8f0',
                     borderRadius: '8px'
                   }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="accuracy" 
-                  stroke="#10B981" 
+                <Line
+                  type="monotone"
+                  dataKey="accuracy"
+                  stroke="#10B981"
                   strokeWidth={3}
                   dot={{ fill: '#10B981', strokeWidth: 2, r: 6 }}
                 />
@@ -193,6 +287,7 @@ export default function AccuracyCheck() {
                     <th className="text-left py-3 px-2 font-medium text-slate-900">Precision</th>
                     <th className="text-left py-3 px-2 font-medium text-slate-900">Recall</th>
                     <th className="text-left py-3 px-2 font-medium text-slate-900">F1-Score</th>
+                    <th className="text-left py-3 px-2 font-medium text-slate-900">False Positive</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -208,6 +303,7 @@ export default function AccuracyCheck() {
                       <td className="py-3 px-2 text-slate-700">{model.precision}%</td>
                       <td className="py-3 px-2 text-slate-700">{model.recall}%</td>
                       <td className="py-3 px-2 text-slate-700">{model.f1}%</td>
+                      <td className="py-3 px-2 text-slate-700">{model.fp}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -231,11 +327,10 @@ export default function AccuracyCheck() {
               ].map((model, index) => (
                 <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      model.status === 'excellent' ? 'bg-green-500' :
+                    <div className={`w-3 h-3 rounded-full ${model.status === 'excellent' ? 'bg-green-500' :
                       model.status === 'good' ? 'bg-blue-500' :
-                      'bg-orange-500'
-                    }`} />
+                        'bg-orange-500'
+                      }`} />
                     <div>
                       <p className="font-medium text-slate-900">{model.name}</p>
                       <p className="text-xs text-slate-500">

@@ -13,7 +13,7 @@ process.env.PORT = "3000";
 import express from "express";
 import cors from "cors";
 
-import { prismaClient } from "./db/db";
+import prismaClient, { connect_prisma, run_migrations } from "./db/db";
 import { baseRouter } from "./routes/baseRouter";
 import redisClient from "./db/redis";
 import { logger } from "./middleware/logger";
@@ -40,8 +40,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 async function startServer() {
     try {
-        await prismaClient.$connect();
-        console.log("✅ Database connected");
+        run_migrations();
+        await connect_prisma();
         app.listen(process.env.PORT, () => console.log(`✅ Server running on port ${process.env.PORT}`));
     } catch (error) {
         console.error("❌ Database connection failed", error);

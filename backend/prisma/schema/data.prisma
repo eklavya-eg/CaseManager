@@ -2,5 +2,6 @@ model Data {
     id         String   @id @default(uuid())
     name       String
     uploadedAt DateTime @default(now())
+    columns    String[]
     data       Bytes
 }

@@ -15,18 +15,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.brokerController = void 0;
 const redis_1 = __importDefault(require("../db/redis"));
 const broker_1 = require("../schemas/broker");
-const db_1 = require("../db/db");
+const db_1 = __importDefault(require("../db/db"));
 class BrokerController {
     constructor() {
         this.getModelName = (modelId) => __awaiter(this, void 0, void 0, function* () {
-            const modelName = yield db_1.prismaClient.model.findUnique({
+            const modelName = yield db_1.default.model.findUnique({
                 select: { name: true },
                 where: { id: modelId }
             });
             return (modelName === null || modelName === void 0 ? void 0 : modelName.name) || "";
         });
         this.getDatasetName = (datasetId) => __awaiter(this, void 0, void 0, function* () {
-            const datasetName = yield db_1.prismaClient.data.findUnique({
+            const datasetName = yield db_1.default.data.findUnique({
                 select: { name: true },
                 where: { id: datasetId }
             });
@@ -39,13 +39,44 @@ class BrokerController {
                     message: "Wrong Inputs"
                 });
             }
-            const { modelId, datasetId } = data;
-            const re = yield redis_1.default.lPush("predict", JSON.stringify({
-                model_id: modelId,
-                data_id: datasetId,
-            }));
-            if (re === 1) {
-                return res.json({ message: "Success" });
+            const { modelId, datasetId, accuracy_check, columnName } = data;
+            if (accuracy_check === true) {
+                if (columnName == undefined) {
+                    return res.status(400).json({
+                        message: "Wrong Inputs"
+                    });
+                }
+                else {
+                    const columns = yield db_1.default.data.findFirst({
+                        where: { id: datasetId },
+                        select: { columns: true }
+                    });
+                    if (columns === null || columns.columns.includes(columnName) == false) {
+                        return res.status(400).json({
+                            message: "Wrong Inputs"
+                        });
+                    }
+                    const re = yield redis_1.default.lPush("predict", JSON.stringify({
+                        model_id: modelId,
+                        data_id: datasetId,
+                        accuracy_check: true,
+                        column_name: columnName,
+                    }));
+                    if (re === 1) {
+                        return res.json({ message: "Success" });
+                    }
+                }
+            }
+            else {
+                const re = yield redis_1.default.lPush("predict", JSON.stringify({
+                    model_id: modelId,
+                    data_id: datasetId,
+                    accuracy_check: false,
+                    column_name: null,
+                }));
+                if (re === 1) {
+                    return res.json({ message: "Success" });
+                }
             }
             return res.status(500).json({ message: "Internal Server Error" });
         });

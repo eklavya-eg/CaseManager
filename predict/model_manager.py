@@ -1,11 +1,15 @@
 import asyncio
 import io
 import pickle as pkl
+import traceback
 from typing import Any
 import httpx
 import pandas as pd
+from pandas import Series
 import numpy as np
 import shap
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import accuracy_score, confusion_matrix
 import datetime
 import time
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -67,7 +71,7 @@ class ModelManager:
         except:
             try:
                 explainer = shap.Explainer(model[-1])
-                shapvalues = explainer(model[:-1].transform(data[:9]))
+                shapvalues = explainer(model[:-1].transform(data))
                 shap_values = []
                 for shapi in shapvalues:
                     shap_values.append([float(np.round(val, 5)) for val in shapi.values])
@@ -125,7 +129,37 @@ class ModelManager:
         return pred
     
     @classmethod
-    async def process(cls, model_id: str, data_id: str):
+    async def get_metrics(cls, pred, actual: Series|None):
+        try:
+            if actual is None or pred is None or len(pred)!=len(actual):
+                raise ValueError("Actual values and predictions must have the same length")
+            le = LabelEncoder()
+            accuracy_main = 0
+            classes_main = list(actual.unique())
+            classes = list(actual.unique())
+            for _ in range(len(classes_main)):
+                le.classes_ = np.array(classes)
+                accuracy = accuracy_score(le.transform(actual), pred)
+                if accuracy>accuracy_main:
+                    accuracy_main = accuracy
+                    classes_main = classes.copy()
+                classes = classes[-1:]+classes[:-1]
+            le.classes_ = np.array(classes_main)
+            accuracy = accuracy_score(le.transform(actual), pred)
+            tn, fp, fn, tp = confusion_matrix(le.transform(actual), pred).ravel()
+            precision = tp/(tp+fp)
+            recall = tp/(tp+fn)
+            f1 = 2*precision*recall/(precision+recall)
+            return accuracy, fp, fn, tp, tn
+            
+                
+            
+        except Exception as e:
+            print(f"Error in getting metrics: {e}")
+            return None, None, None, None, None
+    
+    @classmethod
+    async def process(cls, model_id: str, data_id: str, accuracy_check: bool, column_name: str | None):
         try:
             data, data_name = await cls.load_data(data_id)
             data: pd.DataFrame | None
@@ -151,32 +185,35 @@ class ModelManager:
                         status_db = await cls.get_status_db()
                         prediction_status_collection_name = os.getenv("PREDICTION_STATUS_COLLECTION", "prediction_statuses")
                         current = status_db[prediction_status_collection_name].find_one({"id": f"{model_id}_{data_id}"})
+                        current = {
+                            "id": f"{model_id}_{data_id}",
+                            "model_id": model_id,
+                            "data_id": data_id,
+                            "accuracy_check": accuracy_check,
+                            "column_name": column_name,
+                            "status": "pending",
+                            "created_at": datetime.datetime.now(),
+                            "updated_at": datetime.datetime.now(),
+                            "accuracy": 0.0,
+                            "total": len(data),
+                            "false_positive": 0,
+                            "false_negative": 0,
+                            "true_positive": 0,
+                            "true_negative": 0,
+                            "model_name": model_name,
+                            "data_name": data_name,
+                        }
                         if current is None:
-                            current = {
-                                "id": f"{model_id}_{data_id}",
-                                "status": "pending",
-                                "created_at": datetime.datetime.now(),
-                                "updated_at": datetime.datetime.now(),
-                                "accuracy": 0.0,
-                                "model_name": model_name,
-                                "data_name": data_name,
-                            }
                             await status_db[prediction_status_collection_name].insert_one(current, upsert=True)
                         else:
-                            current = {
-                                "id": f"{model_id}_{data_id}",
-                                "status": "pending",
-                                "created_at": datetime.datetime.now(),
-                                "updated_at": datetime.datetime.now(),
-                                "accuracy": 0.0,
-                                "model_name": model_name,
-                                "data_name": data_name,
-                            }
                             await status_db[prediction_status_collection_name].update_one({"id": f"{model_id}_{data_id}"}, {"$set": current}, upsert=True)
                     
                     cls.models[model_id] = (model, time.time())
                     
                 pred = await cls.predict_model(cls.models[model_id][0], data)
+                accuracy = false_positive = false_negative = true_positive = true_negative = None
+                if accuracy_check==True:
+                    accuracy, false_positive, false_negative, true_positive, true_negative = await cls.get_metrics(pred, data.get(column_name))
                 shap_values, finalcols = await cls.get_shap_values(cls.models[model_id][0], data)
                 # TODO: shap
                 print("========================Prediction Success========================")
@@ -208,9 +245,13 @@ class ModelManager:
                 status_db = await cls.get_status_db()
                 prediction_status_collection_name = os.getenv("PREDICTION_STATUS_COLLECTION", "prediction_statuses")
                 updated = {
-                    "status": "predicted",
+                    "status": "success",
                     "updated_at": datetime.datetime.now(),
-                    "accuracy": 0.0,
+                    "accuracy": accuracy or 0,
+                    "false_positive": int(false_positive or 0),
+                    "false_negative": int(false_negative or 0),
+                    "true_positive": int(true_positive or 0),
+                    "true_negative": int(true_negative or 0),
                     "finalcols": finalcols,
                 }
                 await status_db[prediction_status_collection_name].update_one({"id": f"{model_id}_{data_id}"}, {"$set": updated}, upsert=True)
@@ -220,6 +261,7 @@ class ModelManager:
             
         except Exception as e:
             print(f"Error in process method: {e}")
+            traceback.print_exc()
             return None
     
     @classmethod

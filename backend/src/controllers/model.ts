@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prismaClient } from "../db/db"
+import prismaClient from "../db/db"
 import { BaseController } from "./base";
 import { modelPost } from "../schemas/model";
 import fs from "fs/promises"

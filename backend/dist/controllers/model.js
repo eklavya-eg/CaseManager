@@ -13,13 +13,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.modelController = void 0;
-const db_1 = require("../db/db");
+const db_1 = __importDefault(require("../db/db"));
 const base_1 = require("./base");
 const model_1 = require("../schemas/model");
 const promises_1 = __importDefault(require("fs/promises"));
 class ModelController extends base_1.BaseController {
     constructor() {
-        super(db_1.prismaClient.model);
+        super(db_1.default.model);
         this.getModels = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const models = yield this.findAll({

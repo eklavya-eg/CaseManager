@@ -58,15 +58,17 @@ class PredictWorker:
             print(task_json)
             model_id = task_json.get('model_id')
             data_id = task_json.get('data_id')
+            accuracy_check = task_json.get('accuracy_check')
+            column_name = task_json.get('column_name')
             
-            if not model_id or not data_id:
+            if model_id is None or data_id is None or accuracy_check is None:
                 self.logger.error(f"Invalid task data: {task_json}")
                 return
                 
-            self.logger.info(f"Worker {self.worker_id} processing: model_id={model_id}, data_id={data_id}")
+            self.logger.info(f"Worker {self.worker_id} processing: model_id={model_id}, data_id={data_id}, accuracy_check={accuracy_check}, column_name={column_name}")
             
             # Process the prediction using ModelManager
-            result = await ModelManager.process(model_id, data_id)
+            result = await ModelManager.process(model_id, data_id, accuracy_check, column_name)
             
             if result:
                 self.logger.info(f"Worker {self.worker_id} completed prediction successfully")

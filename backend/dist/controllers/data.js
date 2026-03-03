@@ -13,18 +13,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dataController = void 0;
-const db_1 = require("../db/db");
+const csv_parser_1 = __importDefault(require("csv-parser"));
+const fs_1 = require("fs");
+const promises_1 = __importDefault(require("fs/promises"));
+const db_1 = __importDefault(require("../db/db"));
 const data_1 = require("../schemas/data");
 const base_1 = require("./base");
-const promises_1 = __importDefault(require("fs/promises"));
 class DataController extends base_1.BaseController {
     constructor() {
-        super(db_1.prismaClient.data);
+        super(db_1.default.data);
         this.getDatasets = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const datasets = yield this.findAll({
                     id: true,
                     name: true,
+                    columns: true,
                     uploadedAt: true
                 });
                 return res.json(datasets);
@@ -52,7 +55,18 @@ class DataController extends base_1.BaseController {
                     return res.status(400).json({ message: "No file uploaded" });
                 }
                 const buffer = yield promises_1.default.readFile(req.file.path);
-                const dataset = yield this.create(Object.assign(Object.assign({}, data), { data: buffer }));
+                const getHeaders = (path) => {
+                    return new Promise(resolve => {
+                        (0, fs_1.createReadStream)(path)
+                            .pipe((0, csv_parser_1.default)())
+                            .on("headers", headers => {
+                            resolve(headers);
+                        });
+                    });
+                };
+                const headers = yield getHeaders(req.file.path);
+                const dataset = yield this.create(Object.assign(Object.assign({}, data), { columns: headers, data: buffer }));
+                // delete dataset[data]
                 return res.json({ dataset });
             }
             catch (error) {

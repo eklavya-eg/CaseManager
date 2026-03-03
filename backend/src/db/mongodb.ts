@@ -1,5 +1,4 @@
-import mongoose, { Connection } from "mongoose";
-import { MongoClient, Db, Collection } from "mongodb";
+import { MongoClient, Db } from "mongodb";
 
 
 class MongoDBClient {
